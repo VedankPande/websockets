@@ -1,25 +1,23 @@
-const wss = require('websocket').server;
+const wss = require('ws');
 const http = require('http');
 
-httpServer = http.Server()
-httpServer.listen(8000);
-console.log('listening on websocket port....')
-
-server = new wss({
-    httpServer: httpServer,
-})
+server = new wss.WebSocketServer({port: 8000})
 console.log('created websocket server')
 
 
-server.on('request',function(request){
-    console.log(request.origin);
+server.on('connection',function(connection, req){
+    console.log("A new device connected");
 
-    var connection = request.accept(null, request.origin);
-    connection.on('message',function(message){console.log(message)})
-    connection.send('connection made!')
-    console.log((new Date()) + " Connection accepted.");
-    console.log(connection.remoteAddresses);
+    connection.on('message',function(message){
+        
+        console.log(message.toString())
+        connection.send('hello from the server!')
+        console.log("num clients:", server.clients.size)
+        server.clients.forEach(client => {
+            if (client !== connection && client.readyState === wss.WebSocket.OPEN){
+                console.log('sending broadcast')
+                client.send('A new device joined the document');
+            }            
+        });
+    })
 })
-
-
-
